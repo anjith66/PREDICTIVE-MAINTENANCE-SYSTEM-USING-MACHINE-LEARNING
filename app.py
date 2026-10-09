@@ -1,5 +1,5 @@
-
 import os
+import urllib.request
 
 import faiss
 import joblib
@@ -24,6 +24,8 @@ st.set_page_config(
 load_dotenv()
 
 MODEL_DIR = "predictive_maintenance_model"
+MODEL_PATH = os.path.join(MODEL_DIR, "rf_model.joblib")
+MODEL_URL = "https://github.com/anjith66/PREDICTIVE-MAINTENANCE-SYSTEM-USING-MACHINE-LEARNING/releases/download/v1.0.0/rf_model.joblib"
 
 
 # --------------------------------------------------
@@ -32,6 +34,14 @@ MODEL_DIR = "predictive_maintenance_model"
 
 @st.cache_resource
 def load_artifacts():
+    # Automatically download the large model file if missing on Streamlit Cloud
+    if not os.path.exists(MODEL_PATH):
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        with st.spinner(
+            "Downloading large model file (127MB) from GitHub Releases... Please wait."
+        ):
+            urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+
     rf_model = joblib.load(
         os.path.join(MODEL_DIR, "rf_model.joblib")
     )
@@ -199,7 +209,7 @@ Rules:
 """
 
     response = client.models.generate_content(
-        model="gemini-3.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
     )
 
@@ -229,7 +239,7 @@ except Exception as exc:
     st.error(f"Could not load project files: {exc}")
     st.info(
         "Check that the predictive_maintenance_model folder "
-        "is beside app.py and contains all five saved files."
+        "is beside app.py and contains all saved files."
     )
     st.stop()
 
