@@ -1,5 +1,4 @@
 import os
-import urllib.request
 
 import faiss
 import joblib
@@ -7,7 +6,6 @@ import numpy as np
 import pandas as pd
 import shap
 import streamlit as st
-from dotenv import load_dotenv
 from google import genai
 from sentence_transformers import SentenceTransformer
 
@@ -21,11 +19,7 @@ st.set_page_config(
     layout="wide",
 )
 
-load_dotenv()
-
 MODEL_DIR = "predictive_maintenance_model"
-MODEL_PATH = os.path.join(MODEL_DIR, "rf_model.joblib")
-MODEL_URL = "https://github.com/anjith66/PREDICTIVE-MAINTENANCE-SYSTEM-USING-MACHINE-LEARNING/releases/download/v1.0.0/rf_model.joblib"
 
 
 # --------------------------------------------------
@@ -34,14 +28,6 @@ MODEL_URL = "https://github.com/anjith66/PREDICTIVE-MAINTENANCE-SYSTEM-USING-MAC
 
 @st.cache_resource
 def load_artifacts():
-    # Automatically download the large model file if missing on Streamlit Cloud
-    if not os.path.exists(MODEL_PATH):
-        os.makedirs(MODEL_DIR, exist_ok=True)
-        with st.spinner(
-            "Downloading large model file (127MB) from GitHub Releases... Please wait."
-        ):
-            urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
-
     rf_model = joblib.load(
         os.path.join(MODEL_DIR, "rf_model.joblib")
     )
@@ -132,7 +118,7 @@ def explain_engine(engine_row, explainer):
 
 
 # --------------------------------------------------
-# Gemini recommendation
+# Gemini recommendation (using st.secrets)
 # --------------------------------------------------
 
 def create_recommendation(
@@ -142,11 +128,12 @@ def create_recommendation(
     index,
     embedding_model,
 ):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
         return (
-            "Gemini API key is missing. Add GEMINI_API_KEY "
-            "to your .env file and restart the app."
+            "Gemini API key is missing. Please add GEMINI_API_KEY "
+            "to your .streamlit/secrets.toml file and restart the app."
         )
 
     client = genai.Client(api_key=api_key)
@@ -239,7 +226,7 @@ except Exception as exc:
     st.error(f"Could not load project files: {exc}")
     st.info(
         "Check that the predictive_maintenance_model folder "
-        "is beside app.py and contains all saved files."
+        "is beside app.py and contains all five saved files."
     )
     st.stop()
 

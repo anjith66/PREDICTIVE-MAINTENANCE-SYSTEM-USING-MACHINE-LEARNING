@@ -1,5 +1,7 @@
 .env
+.streamlit/
 .venv/
 __pycache__/
 *.pyc
-predictive_maintenance_model/
+*.joblib
+predictive_maintenance_model/rf_model.joblib
