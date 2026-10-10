@@ -1,4 +1,5 @@
 import os
+import urllib.request
 
 import faiss
 import joblib
@@ -20,6 +21,32 @@ st.set_page_config(
 )
 
 MODEL_DIR = "predictive_maintenance_model"
+RELEASE_URL = "https://github.com/anjith66/PREDICTIVE-MAINTENANCE-SYSTEM-USING-MACHINE-LEARNING/releases/download/v1.0.0"
+
+MODEL_FILES = [
+    "rf_model.joblib",
+    "isolation_model.joblib",
+    "maintenance_documents.joblib",
+    "maintenance_index.faiss",
+    "latest_engine_state.csv",
+]
+
+
+# --------------------------------------------------
+# Automatic Model File Downloader (for GitHub Releases)
+# --------------------------------------------------
+
+def download_model_files():
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    for filename in MODEL_FILES:
+        file_path = os.path.join(MODEL_DIR, filename)
+        if not os.path.exists(file_path):
+            file_url = f"{RELEASE_URL}/{filename}"
+            print(f"Downloading {filename} from GitHub Release...")
+            try:
+                urllib.request.urlretrieve(file_url, file_path)
+            except Exception as e:
+                st.error(f"Failed to download {filename}: {e}")
 
 
 # --------------------------------------------------
@@ -28,6 +55,9 @@ MODEL_DIR = "predictive_maintenance_model"
 
 @st.cache_resource
 def load_artifacts():
+    # Automatically download large model/FAISS artifacts if running on Streamlit Cloud
+    download_model_files()
+
     rf_model = joblib.load(
         os.path.join(MODEL_DIR, "rf_model.joblib")
     )
@@ -118,7 +148,7 @@ def explain_engine(engine_row, explainer):
 
 
 # --------------------------------------------------
-# Gemini recommendation (using st.secrets)
+# Gemini recommendation
 # --------------------------------------------------
 
 def create_recommendation(
@@ -226,7 +256,7 @@ except Exception as exc:
     st.error(f"Could not load project files: {exc}")
     st.info(
         "Check that the predictive_maintenance_model folder "
-        "is beside app.py and contains all five saved files."
+        "is accessible and release download links are valid."
     )
     st.stop()
 
